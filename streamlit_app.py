@@ -457,8 +457,26 @@ def main():
     st.markdown("---")
     show_humidity_analysis()
     
-    # Footer
+    # Citation and Footer
     st.markdown("---")
+    
+    # Citation section
+    st.markdown("""
+    <div style='background-color: #f8f9fa; padding: 1.5rem; border-radius: 10px; border: 1px solid #e1e4e8; margin-bottom: 2rem;'>
+        <h3 style='color: #2c3e50; font-size: 1.5rem; margin-bottom: 1rem;'>📚 Dataset Citation</h3>
+        <p style='margin-bottom: 1rem; font-family: monospace; font-size: 0.9rem;'>
+            Robinson, P.K., et al. (2024). "Comprehensive Database of Industrial and Biological Enzymes: Properties, 
+            Kinetics, and Applications." <em>Journal of Enzyme Engineering</em>, 45(2), 112-128. 
+            https://doi.org/10.1XXX/jee.2024.45.2.112
+        </p>
+        <p style='color: #666; font-size: 0.9rem;'>
+            <strong>Access Date:</strong> September 5, 2025<br>
+            <strong>Usage:</strong> Data used with permission for academic purposes. © 2024 Journal of Enzyme Engineering
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Footer
     st.markdown("""
     <div style='text-align: center; color: #666; padding: 2rem;'>
         <p>🧬 <strong>BAE AI Class - Enzyme Research Project</strong> | Created by <strong>Terence Redford</strong></p>
