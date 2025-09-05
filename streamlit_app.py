@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from PIL import Image
 import os
 import numpy as np
-import requests
+import calendar
 from datetime import datetime, timedelta
 
 # Set page configuration
@@ -47,60 +47,70 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def get_weather_data(city, country_code):
-    """Get historical humidity data from World Bank Climate Data"""
+@st.cache_data
+def load_climate_data():
+    """Load the climate data from CSV file"""
     try:
-        # Dictionary of average monthly humidity data by city (source: World Bank Climate Data)
-        climate_data = {
-            'New York': {'humidity': [71, 68, 64, 63, 69, 71, 72, 74, 75, 73, 70, 71], 'annual_avg': 70},
-            'London': {'humidity': [84, 80, 76, 72, 71, 72, 73, 75, 79, 82, 84, 85], 'annual_avg': 78},
-            'Tokyo': {'humidity': [52, 53, 56, 63, 69, 75, 77, 73, 75, 68, 65, 56], 'annual_avg': 65},
-            'Sydney': {'humidity': [73, 74, 74, 74, 76, 77, 73, 69, 67, 68, 69, 71], 'annual_avg': 72},
-            'Cape Town': {'humidity': [71, 72, 74, 78, 81, 82, 82, 82, 80, 77, 74, 72], 'annual_avg': 77},
-            'Mumbai': {'humidity': [69, 67, 69, 71, 71, 80, 86, 86, 83, 77, 71, 69], 'annual_avg': 75},
-            'Dubai': {'humidity': [65, 64, 63, 58, 55, 58, 61, 64, 67, 65, 64, 66], 'annual_avg': 63},
-            'Singapore': {'humidity': [84, 82, 83, 84, 83, 81, 80, 80, 81, 83, 85, 86], 'annual_avg': 83},
-            'Paris': {'humidity': [85, 80, 77, 73, 75, 76, 75, 76, 80, 85, 86, 86], 'annual_avg': 80},
-            'Berlin': {'humidity': [86, 83, 77, 72, 70, 71, 71, 73, 78, 83, 87, 87], 'annual_avg': 78},
-            'Johannesburg': {'humidity': [69, 70, 71, 67, 58, 54, 52, 47, 46, 57, 65, 66], 'annual_avg': 60},
-            'São Paulo': {'humidity': [80, 79, 80, 80, 79, 78, 75, 71, 72, 75, 76, 79], 'annual_avg': 77},
-            'Beijing': {'humidity': [44, 44, 46, 46, 53, 61, 75, 77, 71, 66, 57, 47], 'annual_avg': 57},
-        }
-        
-        # Get data for the selected city (default to New York if city not in dataset)
-        city_data = climate_data.get(city, climate_data['New York'])
+        return pd.read_csv('climate_data.csv')
+    except Exception as e:
+        st.error(f"Error loading climate data: {e}")
+        return None
+
+def get_weather_data(city, country_code):
+    """Get historical humidity data from World Bank Climate Data CSV"""
+    try:
+        # Load the climate data
+        climate_df = load_climate_data()
+        if climate_df is None:
+            return None
+            
+        # Get data for the selected city
+        city_data = climate_df[climate_df['City'] == city].iloc[0]
         
         # Get current month (1-12)
-        current_month = datetime.now().month - 1  # 0-based index
+        current_month = datetime.now().month
         
-        # Create 30-day humidity trend using monthly data
-        monthly_humidity = city_data['humidity'][current_month]
-        prev_month_humidity = city_data['humidity'][current_month-1 if current_month > 0 else 11]
-        next_month_humidity = city_data['humidity'][(current_month+1) % 12]
+        # Get the monthly values (columns are named Jan, Feb, etc.)
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        monthly_values = [city_data[month] for month in months]
         
-        # Generate daily variations around the monthly average
+        # Get the current, previous, and next month's values
+        current_month_idx = current_month - 1  # 0-based index
+        monthly_humidity = monthly_values[current_month_idx]
+        prev_month_humidity = monthly_values[current_month_idx-1 if current_month_idx > 0 else 11]
+        next_month_humidity = monthly_values[(current_month_idx+1) % 12]
+        
+        # Calculate daily values for the month
         daily_humidity = []
         dates = []
         
-        for i in range(30):
-            # Create realistic daily variations
-            if i < 10:  # First third of the month
-                base = prev_month_humidity * 0.2 + monthly_humidity * 0.8
-            elif i < 20:  # Middle of the month
-                base = monthly_humidity
-            else:  # Last third of the month
-                base = monthly_humidity * 0.8 + next_month_humidity * 0.2
-                
-            # Add some random variation (±5%)
-            daily_value = base + np.random.uniform(-5, 5)
-            daily_humidity.append(round(max(min(daily_value, 100), 0), 1))
-            dates.append((datetime.now() - timedelta(days=29-i)).strftime('%Y-%m-%d'))
+        # Get the number of days in the current month
+        year = datetime.now().year
+        month = datetime.now().month
+        _, days_in_month = calendar.monthrange(year, month)
+        
+        for day in range(1, days_in_month + 1):
+            # Calculate the progression through the month (0 to 1)
+            progress = (day - 1) / (days_in_month - 1)
+            
+            # Interpolate between months for smoother transitions
+            if progress < 0.2:  # First fifth of the month
+                humidity = prev_month_humidity * (0.2 - progress) / 0.2 + monthly_humidity * progress / 0.2
+            elif progress > 0.8:  # Last fifth of the month
+                humidity = monthly_humidity * (1 - progress) / 0.2 + next_month_humidity * (progress - 0.8) / 0.2
+            else:  # Middle of the month
+                humidity = monthly_humidity
+            
+            daily_humidity.append(round(humidity, 1))
+            dates.append(datetime(year, month, day).strftime('%Y-%m-%d'))
         
         return {
-            'current_humidity': round(daily_humidity[-1], 1),
+            'current_humidity': round(monthly_humidity, 1),
             'daily_humidity': daily_humidity,
             'dates': dates,
-            'annual_average': city_data['annual_avg']
+            'annual_average': city_data['Annual_Avg'],
+            'latitude': city_data['Latitude'],
+            'longitude': city_data['Longitude']
         }
     except Exception as e:
         st.error(f"Error processing climate data: {e}")
