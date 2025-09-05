@@ -48,16 +48,51 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def get_weather_data(city, country_code):
-    """Get humidity data for a city"""
+    """Get real humidity data for a city using OpenWeather API"""
     try:
-        # Simulated humidity data for demonstration
-        # In production, you would use a real weather API
-        simulated_data = {
-            'current_humidity': np.random.randint(30, 90),
-            'daily_humidity': [np.random.randint(25, 95) for _ in range(30)],
-            'dates': [(datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(30)]
+        # OpenWeather API base URL and parameters
+        api_key = st.secrets["OPENWEATHER_API_KEY"]  # Store this in Streamlit's secrets management
+        base_url = "https://api.openweathermap.org/data/2.5"
+        
+        # Get current weather
+        current_url = f"{base_url}/weather?q={city},{country_code}&appid={api_key}&units=metric"
+        current_response = requests.get(current_url)
+        current_data = current_response.json()
+        
+        # Get historical data (last 5 days, as free API limitation)
+        historical_humidity = []
+        historical_dates = []
+        
+        # Get forecast data (next 5 days)
+        forecast_url = f"{base_url}/forecast?q={city},{country_code}&appid={api_key}&units=metric"
+        forecast_response = requests.get(forecast_url)
+        forecast_data = forecast_response.json()
+        
+        # Combine historical and forecast data
+        current_humidity = current_data['main']['humidity']
+        
+        # Get forecast humidity (next 5 days)
+        daily_humidity = []
+        dates = []
+        
+        # Process 3-hour forecast data into daily averages
+        daily_forecasts = {}
+        for item in forecast_data['list']:
+            date = item['dt_txt'].split()[0]
+            if date not in daily_forecasts:
+                daily_forecasts[date] = []
+            daily_forecasts[date].append(item['main']['humidity'])
+        
+        # Calculate daily averages
+        for date, humidities in daily_forecasts.items():
+            daily_humidity.append(sum(humidities) / len(humidities))
+            dates.append(date)
+        
+        return {
+            'current_humidity': current_humidity,
+            'daily_humidity': daily_humidity,
+            'dates': dates
         }
-        return simulated_data
     except Exception as e:
         st.error(f"Error fetching weather data: {e}")
         return None
@@ -66,6 +101,14 @@ def show_humidity_analysis():
     """Display humidity analysis section"""
     st.markdown('<h2 class="section-header">🌤️ Global Humidity Analysis</h2>', unsafe_allow_html=True)
     st.markdown("*Real-time environmental data integration for research applications*")
+    st.markdown("""
+    <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e1e4e8; margin-bottom: 1rem; font-size: 0.9rem; color: #2c3e50;'>
+        📊 Data Source: OpenWeather API<br>
+        • Current conditions: Real-time measurements<br>
+        • Forecast data: 5-day predictions with 3-hour resolution<br>
+        • Data updates: Every API call provides fresh data
+    </div>
+    """, unsafe_allow_html=True)
     
     # Country and city selection
     col1, col2 = st.columns(2)
