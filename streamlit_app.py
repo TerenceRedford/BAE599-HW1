@@ -57,7 +57,7 @@ def load_climate_data():
         return None
 
 def get_weather_data(city, country_code):
-    """Get historical humidity data from World Bank Climate Data CSV"""
+    """Get historical humidity data from climate data CSV"""
     try:
         # Load the climate data
         climate_df = load_climate_data()
@@ -65,7 +65,10 @@ def get_weather_data(city, country_code):
             return None
             
         # Get data for the selected city
-        city_data = climate_df[climate_df['City'] == city].iloc[0]
+        city_data = climate_df[climate_df['City'] == city]
+        if city_data.empty:
+            st.error(f"No data available for {city}")
+            return None
         
         # Get current month (1-12)
         current_month = datetime.now().month
@@ -120,6 +123,30 @@ def show_humidity_analysis():
     """Display humidity analysis section"""
     st.markdown('<h2 class="section-header">🌤️ Global Humidity Analysis</h2>', unsafe_allow_html=True)
     st.markdown("*Historical climate data analysis for enzyme research applications*")
+    
+    # Load available cities and countries
+    climate_df = load_climate_data()
+    if climate_df is None:
+        return
+    
+    # Create selection columns
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        countries = climate_df[['Country_Code']].drop_duplicates()
+        selected_country = st.selectbox(
+            "🌍 Select Country:",
+            options=countries['Country_Code'].tolist(),
+            index=0
+        )
+    
+    with col2:
+        cities = climate_df[climate_df['Country_Code'] == selected_country]['City'].tolist()
+        selected_city = st.selectbox(
+            "🏙️ Select City:",
+            options=cities,
+            index=0
+        )
     st.markdown("""
     <div style='background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e1e4e8; margin-bottom: 1rem; font-size: 0.9rem; color: #2c3e50;'>
         📊 Data Source: World Bank Climate Data<br>
