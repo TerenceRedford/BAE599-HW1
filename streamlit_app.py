@@ -193,14 +193,14 @@ def main():
     with col1:
         # Profile section
         st.markdown('<div class="profile-container">', unsafe_allow_html=True)
-        st.markdown('<h2 class="section-header">👨‍🔬 Researcher Profile</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-header">� Personal Profile</h2>', unsafe_allow_html=True)
         
         # Display profile image
         try:
             image_path = "Terence.Redford.jpg"
             if os.path.exists(image_path):
                 image = Image.open(image_path)
-                st.image(image, caption="Terence Redford", width=200)
+                st.image(image, width=200)
             else:
                 st.info("Profile image not found. Please ensure 'Terence.Redford.jpg' is in the current directory.")
         except Exception as e:
@@ -211,7 +211,7 @@ def main():
         **Course:** BAE AI Class  
         **Research Focus:** Enzymology & Biocatalysis  
         **Project:** Industrial Enzyme Analysis Dashboard  
-        **Specialization:** Biochemical Engineering
+        **Specialization:** Food and Bioprocess Engineering
         """)
         st.markdown('</div>', unsafe_allow_html=True)
     
