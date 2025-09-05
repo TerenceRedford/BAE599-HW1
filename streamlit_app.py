@@ -81,13 +81,15 @@ def show_humidity_analysis():
         'CA': ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa'],
         'IN': ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata'],
         'CN': ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Chengdu'],
-        'BR': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza']
+        'BR': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza'],
+        'ZA': ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Port Elizabeth']
     }
     
     country_names = {
         'US': 'United States', 'GB': 'United Kingdom', 'DE': 'Germany', 
         'FR': 'France', 'JP': 'Japan', 'AU': 'Australia',
-        'CA': 'Canada', 'IN': 'India', 'CN': 'China', 'BR': 'Brazil'
+        'CA': 'Canada', 'IN': 'India', 'CN': 'China', 'BR': 'Brazil',
+        'ZA': 'South Africa'
     }
     
     with col1:
