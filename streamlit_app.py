@@ -157,24 +157,16 @@ def show_humidity_analysis():
     </div>
     """, unsafe_allow_html=True)
     
-    # Country and city selection
+    # Load climate data and set up location selection
+    climate_df = load_climate_data()
+    if climate_df is None:
+        st.error("Unable to load climate data.")
+        return
+        
+    # Create selection columns
     col1, col2 = st.columns(2)
     
-    # Define countries and their major cities
-    country_cities = {
-        'US': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix'],
-        'GB': ['London', 'Manchester', 'Birmingham', 'Glasgow', 'Liverpool'],
-        'DE': ['Berlin', 'Munich', 'Hamburg', 'Cologne', 'Frankfurt'],
-        'FR': ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice'],
-        'JP': ['Tokyo', 'Osaka', 'Kyoto', 'Yokohama', 'Kobe'],
-        'AU': ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'],
-        'CA': ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa'],
-        'IN': ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata'],
-        'CN': ['Beijing', 'Shanghai', 'Guangzhou', 'Shenzhen', 'Chengdu'],
-        'BR': ['São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza'],
-        'ZA': ['Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Port Elizabeth']
-    }
-    
+    # Define country names mapping
     country_names = {
         'US': 'United States', 'GB': 'United Kingdom', 'DE': 'Germany', 
         'FR': 'France', 'JP': 'Japan', 'AU': 'Australia',
@@ -182,18 +174,23 @@ def show_humidity_analysis():
         'ZA': 'South Africa'
     }
     
+    # Get unique countries and their codes
+    country_codes = climate_df[['Country_Code']].drop_duplicates().sort_values('Country_Code')
+    
     with col1:
         selected_country = st.selectbox(
             "🌍 Select Country:",
-            options=list(country_names.keys()),
-            format_func=lambda x: country_names[x],
+            options=country_codes['Country_Code'].tolist(),
+            format_func=lambda x: country_names.get(x, x),
             index=0
         )
     
     with col2:
+        # Filter cities for selected country
+        available_cities = climate_df[climate_df['Country_Code'] == selected_country]['City'].unique().tolist()
         selected_city = st.selectbox(
             "🏙️ Select City:",
-            options=country_cities[selected_country],
+            options=available_cities,
             index=0
         )
     
