@@ -202,31 +202,42 @@ def show_humidity_analysis():
             weather_data = get_weather_data(selected_city, selected_country)
             
             if weather_data:
-                # Display current humidity
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.metric(
-                        label="🌡️ Current Humidity",
-                        value=f"{weather_data['current_humidity']}%",
-                        delta=f"{np.random.randint(-5, 5)}% vs yesterday"
-                    )
-                
-                with col2:
-                    avg_humidity = np.mean(weather_data['daily_humidity'])
-                    st.metric(
-                        label="📊 30-Day Average",
-                        value=f"{avg_humidity:.1f}%",
-                        delta=f"{weather_data['current_humidity'] - avg_humidity:.1f}% vs avg"
-                    )
-                
-                with col3:
-                    humidity_trend = "↗️ Rising" if weather_data['daily_humidity'][-1] > weather_data['daily_humidity'][-7] else "↘️ Falling"
-                    st.metric(
-                        label="📈 7-Day Trend",
-                        value=humidity_trend,
-                        delta=f"{abs(weather_data['daily_humidity'][-1] - weather_data['daily_humidity'][-7]):.1f}%"
-                    )
+                # Defensive checks for valid humidity data
+                if (weather_data['current_humidity'] is None or
+                    not isinstance(weather_data['current_humidity'], (int, float)) or
+                    not weather_data['daily_humidity'] or
+                    any([h is None or not isinstance(h, (int, float)) for h in weather_data['daily_humidity']])):
+                    st.warning("Humidity data is missing or invalid for this city.")
+                else:
+                    # Display current humidity
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric(
+                            label="🌡️ Current Humidity",
+                            value=f"{weather_data['current_humidity']}%",
+                            delta=None
+                        )
+                    with col2:
+                        avg_humidity = np.mean(weather_data['daily_humidity'])
+                        st.metric(
+                            label="📊 30-Day Average",
+                            value=f"{avg_humidity:.1f}%",
+                            delta=f"{weather_data['current_humidity'] - avg_humidity:.1f}% vs avg"
+                        )
+                    with col3:
+                        if len(weather_data['daily_humidity']) >= 7:
+                            humidity_trend = "↗️ Rising" if weather_data['daily_humidity'][-1] > weather_data['daily_humidity'][-7] else "↘️ Falling"
+                            st.metric(
+                                label="📈 7-Day Trend",
+                                value=humidity_trend,
+                                delta=f"{abs(weather_data['daily_humidity'][-1] - weather_data['daily_humidity'][-7]):.1f}%"
+                            )
+                        else:
+                            st.metric(
+                                label="📈 7-Day Trend",
+                                value="N/A",
+                                delta=None
+                            )
                 
                 # Humidity trend chart
                 st.markdown("### 📅 30-Day Humidity Trend")
